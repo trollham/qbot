@@ -1,17 +1,26 @@
-pub mod chatbot;
-pub mod server;
-
 use chrono::prelude::*;
 use irc::client::prelude::*;
 use serde::{Deserialize, Serialize, Serializer};
-use uuid::Uuid;
-
 use std::collections::{HashMap, VecDeque};
 use tokio::sync::oneshot;
+use uuid::Uuid;
+use warp::Filter;
 
 pub type StateTx = tokio::sync::mpsc::Sender<StateCommand>;
 pub type StateRx<T> = tokio::sync::oneshot::Receiver<T>;
 
+pub mod chatbot;
+pub mod database;
+pub mod server;
+
+pub fn with_tx<T>(
+    tx: tokio::sync::mpsc::Sender<T>,
+) -> impl Filter<Extract = (tokio::sync::mpsc::Sender<T>,), Error = std::convert::Infallible> + Clone
+where
+    T: Send + Sync,
+{
+    warp::any().map(move || tx.clone())
+}
 #[derive(Debug)]
 pub enum StateCommand {
     AddUser {

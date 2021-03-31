@@ -1,4 +1,4 @@
-use crate::utils::{StateCommand, StateTx, Token};
+use crate::{StateCommand, StateTx, Token};
 use async_trait::async_trait;
 use futures::prelude::*;
 mod irc {
