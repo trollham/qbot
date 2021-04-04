@@ -1,4 +1,4 @@
-# not-so-brittlebot
+# qbot
 
 ## Project setup
 ```
