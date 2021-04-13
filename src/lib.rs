@@ -13,6 +13,27 @@ pub mod chatbot;
 pub mod database;
 pub mod server;
 
+lazy_static::lazy_static! {
+    static ref CLIENT_ID: String = {
+        match std::env::var("CLIENT_ID") {
+            Ok(var) => var,
+            Err(_) => {
+                println!("CLIENT_ID not definied in environment variables.");
+                std::process::exit(1)
+            }
+        }
+    };
+    static ref CLIENT_SECRET: String = {
+        match std::env::var("CLIENT_SECRET") {
+            Ok(var) => var,
+            Err(_) => {
+                println!("CLIENT_SECRET not definied in environment variables.");
+                std::process::exit(1)
+            }
+        }
+    };
+}
+
 pub fn with_tx<T>(
     tx: tokio::sync::mpsc::Sender<T>,
 ) -> impl Filter<Extract = (tokio::sync::mpsc::Sender<T>,), Error = std::convert::Infallible> + Clone
@@ -21,6 +42,7 @@ where
 {
     warp::any().map(move || tx.clone())
 }
+
 #[derive(Debug)]
 pub enum StateCommand {
     AddUser {
@@ -94,10 +116,10 @@ pub fn get_user_config(token: &str) -> Config {
     let mut settings = config::Config::default();
     settings
         .merge(config::File::with_name("Settings").required(false))
-        .unwrap()
+        .unwrap() // TODO error handling
         .merge(config::Environment::with_prefix("TWITCH"))
-        .unwrap();
-    let config = settings.try_into::<HashMap<String, String>>().unwrap();
+        .unwrap(); // TODO error handling
+    let config = settings.try_into::<HashMap<String, String>>().unwrap(); // TODO error handling
 
     let name = match config.get("name") {
         Some(n) => n,

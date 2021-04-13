@@ -28,7 +28,7 @@ qbot starts with the queue closed. Click the Open button to allow users in chat 
 * `!place` - User: get their position in the queue, with an estimated wait time.
 
 ## Roadmap
-- [ ] Add ability to change party size. Not really necessary in its current use case, this would just make the bot less brittle
+- [x] Add ability to change party size. Not really necessary in its current use case, this would just make the bot less brittle
 - [ ] Separate backend onto remote host.
   - [ ] Create frontend application
   - [ ] Switch to stronger oauth flow

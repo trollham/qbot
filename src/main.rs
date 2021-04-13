@@ -1,17 +1,17 @@
+use qbot::*;
+
 use chrono::prelude::*;
 use dotenv::dotenv;
-use qbot::*;
 use simple_logger::SimpleLogger;
 use std::collections::VecDeque;
-use std::process::Command;
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     SimpleLogger::new()
-        .with_level(log::LevelFilter::Trace)
+        .with_level(log::LevelFilter::Debug)
         .init()
-        .unwrap();
+        .unwrap(); // TODO error handling
 
     dotenv().ok();
 
@@ -31,55 +31,58 @@ async fn main() -> anyhow::Result<()> {
                     let pos = find(&user, &state.queue);
 
                     if let Some(index) = pos {
-                        tx.send(index).unwrap();
+                        tx.send(index).unwrap(); // TODO error handling
                     } else {
                         state.queue.push_back(UserEntry {
                             nickname: user,
                             time_joined: Local::now(),
                             id: Uuid::new_v4(),
                         });
-                        tx.send(state.queue.len() - 1).unwrap();
+                        tx.send(state.queue.len() - 1).unwrap(); // TODO error handling
                     }
                 }
                 StateCommand::GetQueue(tx) => {
-                    tx.send(serde_json::to_value(&state).unwrap()).unwrap();
+                    tx.send(serde_json::to_value(&state).unwrap()).unwrap(); // TODO error handling
                 }
 
                 StateCommand::GetQueueStatus(tx) => {
-                    tx.send(state.is_open).unwrap();
+                    tx.send(state.is_open).unwrap(); // TODO error handling
                 }
 
                 StateCommand::FindUser { name, tx } => {
-                    tx.send(find(&name, &state.queue)).unwrap();
+                    tx.send(find(&name, &state.queue)).unwrap(); // TODO error handling
                 }
 
                 StateCommand::PeekQueue { count, tx } => {
                     let first_n: Vec<_> =
                         state.queue.iter().take(count as usize).cloned().collect();
-                    tx.send(first_n).unwrap();
+                    tx.send(first_n).unwrap(); // TODO error handling
                 }
 
                 StateCommand::PopQueue { count, tx } => {
                     let popped_users = pop(count, &mut state.queue);
-                    tx.send(popped_users).unwrap();
+                    tx.send(popped_users).unwrap(); // TODO error handling
                 }
 
                 StateCommand::RemoveUser { user, tx } => {
-                    tx.send(remove(&user, &mut state.queue)).unwrap();
+                    tx.send(remove(&user, &mut state.queue)).unwrap(); // TODO error handling
                 }
 
                 StateCommand::ToggleQueue(tx) => {
                     state.is_open = !state.is_open;
-                    tx.send(state.is_open).unwrap();
+                    tx.send(state.is_open).unwrap(); // TODO error handling
                 }
             }
         }
         Ok(()) as anyhow::Result<()>
     });
 
-    let web_chat_tx = chat_tx.clone();
+    // Initialize DB connections
+    let database_url = std::env::var("DATABASE_URL")?;
+    let pool = sqlx::postgres::PgPool::connect(&database_url).await?;
+
     let web_task = tokio::spawn(async move {
-        let server = warp::serve(server::web::build_server(web_chat_tx));
+        let server = warp::serve(server::web::build_server(pool));
         server.run(([127, 0, 0, 1], 8080)).await;
         Ok(()) as anyhow::Result<()>
     });
@@ -90,16 +93,6 @@ async fn main() -> anyhow::Result<()> {
         Ok(()) as anyhow::Result<()>
     });
 
-    if cfg!(target_os = "windows") {
-        let output = Command::new("cmd")
-            .args(&["/C", "start http://localhost:8080"])
-            .output();
-        if let Ok(o) = output {
-            println!("{:?}", o.stdout);
-            println!("{:?}", o.stderr);
-        }
-    }
-
     let mut auth = String::new();
     if let Some(chatbot::Commands::Token(token)) = chat_rx.recv().await {
         auth = format!("oauth:{}", token.access_token);
@@ -107,7 +100,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut bot = chatbot::Bot::new(get_user_config(&auth), chat_rx)
         .await
-        .unwrap();
+        .unwrap(); // TODO error handling
 
     let bot_task = tokio::spawn(async move {
         chatbot::build_bot(&mut bot);

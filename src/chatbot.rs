@@ -123,8 +123,8 @@ impl Bot {
 
                                 let args = Args {
                                     msg: Message {
-                                        target: message.response_target().unwrap(),
-                                        sender: message.source_nickname().unwrap(),
+                                        target: message.response_target().unwrap(), // TODO error handling
+                                        sender: message.source_nickname().unwrap(), // TODO error handling
                                         message: msg,
                                     },
                                     writer: &sender,
@@ -139,7 +139,7 @@ impl Bot {
                 },
                 Some(command) = self.rx.recv() => {
                     match command {
-                        Commands::SendMessage(message) => {sender.send_privmsg(&self.channel, &message).unwrap();},
+                        Commands::SendMessage(message) => {sender.send_privmsg(&self.channel, &message).unwrap();}, // TODO error handling
                         Commands::Token(_) => log::debug!("Already handled token"),
                     }
                 }
@@ -173,11 +173,11 @@ impl Handler for Peek {
                 tx: state_tx,
             })
             .await
-            .unwrap();
+            .unwrap(); // TODO error handling
 
         let first_n: Vec<String> = state_rx
             .await
-            .unwrap()
+            .unwrap() // TODO error handling
             .into_iter()
             .map(|u| u.nickname)
             .collect();
@@ -185,11 +185,11 @@ impl Handler for Peek {
         if !first_n.is_empty() {
             args.writer
                 .send_privmsg(args.msg.target, &first_n.join(", "))
-                .unwrap();
+                .unwrap(); // TODO error handling
         } else {
             args.writer
                 .send_privmsg(args.msg.target, "The queue is empty")
-                .unwrap();
+                .unwrap(); // TODO error handling
         }
     }
 }
@@ -203,8 +203,8 @@ impl Handler for Join {
         args.state_tx
             .send(StateCommand::GetQueueStatus(resp_tx))
             .await
-            .unwrap();
-        let status = resp_rx.await.unwrap();
+            .unwrap(); // TODO error handling
+        let status = resp_rx.await.unwrap(); // TODO error handling
 
         if !status {
             return;
@@ -217,8 +217,8 @@ impl Handler for Join {
                 tx: resp_tx,
             })
             .await
-            .unwrap();
-        let index = resp_rx.await.unwrap();
+            .unwrap(); // TODO error handling
+        let index = resp_rx.await.unwrap(); // TODO error handling
 
         let queue_pos = QueuePos {
             index: Some(index),
@@ -229,7 +229,7 @@ impl Handler for Join {
 
         args.writer
             .send_privmsg(&args.msg.target, &format!("{}", queue_pos))
-            .unwrap();
+            .unwrap(); // TODO error handling
     }
 }
 
@@ -245,8 +245,8 @@ impl Handler for Place {
                 tx: resp_tx,
             })
             .await
-            .unwrap();
-        let index = resp_rx.await.unwrap();
+            .unwrap(); // TODO error handling
+        let index = resp_rx.await.unwrap(); // TODO error handling
 
         let queue_pos = QueuePos {
             index,
@@ -256,7 +256,7 @@ impl Handler for Place {
         };
         args.writer
             .send_privmsg(args.msg.target, &format!("{}", queue_pos))
-            .unwrap();
+            .unwrap(); // TODO error handling
     }
 }
 
@@ -271,15 +271,15 @@ impl Handler for Leave {
                 tx: resp_tx,
             })
             .await
-            .unwrap();
-        let user = resp_rx.await.unwrap();
+            .unwrap(); // TODO error handling
+        let user = resp_rx.await.unwrap(); // TODO error handling
         if user.is_some() {
             args.writer
                 .send_privmsg(
                     args.msg.target,
                     &format!("{} has been removed from the queue.", args.msg.sender),
                 )
-                .unwrap();
+                .unwrap(); // TODO error handling
         }
     }
 }

@@ -20,7 +20,7 @@ pub struct NextQueryArg {
 }
 
 async fn dispatch<T>(tx: StateTx, rx: StateRx<T>, command: StateCommand) -> Result<T, RecvError> {
-    tx.send(command).await.unwrap();
+    tx.send(command).await.unwrap(); // TODO error handling
     rx.await
 }
 
@@ -50,7 +50,7 @@ mod handlers {
         let (resp_tx, resp_rx) = oneshot::channel();
         let removed_users = dispatch(tx, resp_rx, StateCommand::RemoveUser { user, tx: resp_tx })
             .await
-            .unwrap();
+            .unwrap(); // TODO error handling
         Ok(warp::reply::json(&removed_users))
     }
 
@@ -58,7 +58,7 @@ mod handlers {
         let (resp_tx, resp_rx) = oneshot::channel();
         let queue_status = dispatch(tx, resp_rx, StateCommand::GetQueue(resp_tx))
             .await
-            .unwrap();
+            .unwrap(); // TODO error handling
         Ok(warp::reply::json(&queue_status))
     }
 
@@ -69,14 +69,14 @@ mod handlers {
         let (resp_tx, resp_rx) = oneshot::channel();
         let queue_status = dispatch(tx, resp_rx, StateCommand::ToggleQueue(resp_tx))
             .await
-            .unwrap();
+            .unwrap(); // TODO error handling
         chatbot_tx
             .send(chatbot::Commands::SendMessage(format!(
                 "The queue is now {}.",
                 if queue_status { "open" } else { "closed" }
             )))
             .await
-            .unwrap();
+            .unwrap(); // TODO error handling
         Ok(warp::reply::json(&queue_status))
     }
 
@@ -86,17 +86,17 @@ mod handlers {
         chatbot_tx: chatbot::Tx,
     ) -> Result<impl warp::Reply, Infallible> {
         let (resp_tx, resp_rx) = oneshot::channel();
-        log::debug!("Popping: {}", args.count.unwrap_or(4));
+        log::debug!("Popping: {}", args.count.unwrap_or(4)); // TODO error handling
         let popped_entries = dispatch(
             tx,
             resp_rx,
             StateCommand::PopQueue {
-                count: args.count.unwrap_or(4),
+                count: args.count.unwrap_or(4), // TODO error handling
                 tx: resp_tx,
             },
         )
         .await
-        .unwrap();
+        .unwrap(); // TODO error handling
         if let Some(popped) = &popped_entries {
             let temp_users = popped
                 .iter()
@@ -109,7 +109,7 @@ mod handlers {
                     names_message
                 )))
                 .await
-                .unwrap();
+                .unwrap(); // TODO error handling
         }
         Ok(warp::reply::json(&popped_entries))
     }
