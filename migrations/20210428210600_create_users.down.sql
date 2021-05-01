@@ -1,2 +1,2 @@
 -- Add down migration script here
-drop table queue;
+DROP TABLE users;
