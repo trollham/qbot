@@ -3,8 +3,11 @@
     <th scope="row">{{ index }}</th>
     <td>{{ entry.nickname }}</td>
     <td>{{ entry.time_joined }}</td>
-    <td>
-      <button @click="remove(user)" class="btn btn-outline-danger">
+    <td v-if="is_owner">
+      <button
+        @click="$emit('remove-user', user)"
+        class="btn btn-outline-danger"
+      >
         <font-awesome-icon icon="minus-circle" />
         Remove
       </button>
@@ -23,7 +26,12 @@ export default {
       required: true,
       type: Number,
     },
+    is_owner: {
+      required: true,
+      type: Boolean,
+    },
   },
+  emits: ["remove-user"],
 };
 </script>
 

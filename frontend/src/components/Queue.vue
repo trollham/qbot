@@ -14,16 +14,18 @@
             <th scope="col">#</th>
             <th scope="col">Name</th>
             <th scope="col">Time</th>
-            <th scope="col">Actions</th>
+            <th scope="col" v-if="is_owner">Actions</th>
           </tr>
         </thead>
-        <tbody name="user-table">
-          <transition-group>
+        <tbody>
+          <transition-group name="user-table">
             <QueueEntry
               v-for="(user, index) in queue"
               :key="user.id"
               :entry="user"
               :index="index + 1"
+              :is_owner="is_owner"
+              @remove-user="$emit('remove-user', user)"
               class="queue-item"
             ></QueueEntry>
           </transition-group>
@@ -36,57 +38,29 @@
 <script>
 import QueueEntry from "./QueueEntry.vue";
 
-let initial_queue = [];
-if (process.env.NODE_ENV !== "production") {
-  initial_queue = [
-    {
-      nickname: "Travis Willingham",
-      id: "1",
-      time_joined: "12:20:32",
-    },
-    {
-      nickname: "Laura Bailey",
-      id: "2",
-      time_joined: "12:21:19",
-    },
-    {
-      nickname: "Liam O'Brian",
-      id: "3",
-      time_joined: "1:31:22",
-    },
-    {
-      nickname: "Sam Riegel",
-      id: "4",
-      time_joined: "1:31:01",
-    },
-    {
-      nickname: "Ashley Johnson",
-      id: "5",
-      time_joined: "1:35:16",
-    },
-    {
-      nickname: "Taliesin Jaffe",
-      id: "6",
-      time_joined: "3:46:51",
-    },
-    {
-      nickname: "Marisha Ray",
-      id: "7",
-      time_joined: "8:56:12",
-    },
-  ];
-}
-
 export default {
   name: "Queue",
   components: { QueueEntry },
   data() {
     return {
       pop_size: 4,
-      is_open: false,
-      queue: initial_queue,
     };
   },
+  props: {
+    is_open: {
+      required: false,
+      type: Boolean,
+    },
+    is_owner: {
+      required: true,
+      type: Boolean,
+    },
+    queue: {
+      required: false,
+      type: Array,
+    },
+  },
+  emits: ["remove-user"],
 };
 </script>
 
@@ -94,12 +68,27 @@ export default {
 .queue {
   text-align: center;
 }
-.user-table-enter-active,
-.user-table-leave-active {
-  transition: all 1s;
+.user-table-enter-active {
+  animation: bounce-in 0.4s;
 }
-.user-table-enter, .user-table-leave-to /* .user-table-leave-active below version 2.1.8 */ {
+.user-table-leave-active {
+  transition: opacity 300ms;
+}
+.user-table-leave-from {
+  opacity: 1;
+}
+.user-table-leave-to {
   opacity: 0;
-  transform: translateX(100px);
+}
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>

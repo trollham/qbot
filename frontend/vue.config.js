@@ -1,13 +1,8 @@
 module.exports = {
     configureWebpack: {
-        devtool: 'source-map'
+        devtool: 'source-map',
     },
-    pages: {
-        dashboard: {
-           entry: 'src/dashboard/main.js',
-           template: 'public/dashboard/index.html',
-           filename: 'dashboard/index.html'
-        },
-        index: 'src/main.js'
+    devServer: {
+        proxy: 'http://localhost:3000'
     }
 }

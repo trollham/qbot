@@ -1,18 +1,14 @@
-use qbot::*;
-
 use chrono::prelude::*;
 use dotenv::dotenv;
-use simple_logger::SimpleLogger;
+use env_logger::Env;
+use qbot::*;
 use std::collections::VecDeque;
 use uuid::Uuid;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    SimpleLogger::new()
-        .with_level(log::LevelFilter::Debug)
-        .init()
-        .unwrap(); // TODO error handling
-
+async fn main() {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    tracing::info!("starting application");
     dotenv().ok();
 
     let (state_tx, mut state_rx) = tokio::sync::mpsc::channel(32);
@@ -74,23 +70,24 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Ok(()) as anyhow::Result<()>
+        // Ok(()) as anyhow::Result<()>
     });
 
     // Initialize DB connections
-    let database_url = std::env::var("DATABASE_URL")?;
-    let pool = sqlx::postgres::PgPool::connect(&database_url).await?;
+    let database_url = std::env::var("DATABASE_URL").unwrap(); // TODO error handling
+    let pool = sqlx::postgres::PgPool::connect(&database_url)
+        .await
+        .unwrap(); // TODO error handling
 
-    let web_task = tokio::spawn(async move {
-        let server = warp::serve(server::web::build_server(pool));
-        server.run(([127, 0, 0, 1], 8080)).await;
-        Ok(()) as anyhow::Result<()>
-    });
-
+    // let web_task = tokio::spawn(async move {
+    //     let server = warp::serve(server::web::build_server(pool));
+    //     server.run(([127, 0, 0, 1], 8080)).await;
+    //     // Ok(()) as anyhow::Result<()>
+    // });
     let api_task = tokio::spawn(async move {
-        let server = warp::serve(server::api::build_server(state_tx, chat_tx));
+        let server = warp::serve(server::api::build_server(state_tx, chat_tx, pool));
         server.run(([127, 0, 0, 1], 3000)).await;
-        Ok(()) as anyhow::Result<()>
+        // Ok(()) as anyhow::Result<()>
     });
 
     let mut auth = String::new();
@@ -109,20 +106,20 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::select! {
         _ = bot_task => {
-            log::debug!("Bot task exited.");
-            Ok(()) as anyhow::Result<()>
+            tracing::debug!("Bot task exited.");
+            // Ok(()) as anyhow::Result<()>
         }
-        _ = web_task => {
-            log::debug!("Web server task exited.");
-            Ok(()) as anyhow::Result<()>
-        }
+        // _ = web_task => {
+        //     tracing::debug!("Web server task exited.");
+        //     // Ok(()) as anyhow::Result<()>
+        // }
         _ = api_task => {
-            log::debug!("Api server task exited.");
-            Ok(()) as anyhow::Result<()>
+            tracing::debug!("Api server task exited.");
+            // Ok(()) as anyhow::Result<()>
         }
         _ = state_task => {
-            log::debug!("State task exited.");
-            Ok(()) as anyhow::Result<()>
+            tracing::debug!("State task exited.");
+            // Ok(()) as anyhow::Result<()>
         }
     }
 }
